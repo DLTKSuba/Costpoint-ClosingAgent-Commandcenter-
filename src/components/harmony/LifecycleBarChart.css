@@ -14,6 +14,10 @@
 }
 
 .lifecycle-bar-chart__header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
   margin-bottom: var(--space-3);
 }
 
@@ -299,26 +303,24 @@
   transition: height 0.2s ease;
 }
 
-/* Active filter tags below chart (selected lifecycle bars). */
-.lifecycle-bar-chart__active-filter {
+/* Active filter row: label + outline Button tags (selected lifecycle bars). */
+.lifecycle-bar-chart__active-filters {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-3);
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border-light);
+  max-width: 100%;
 }
 
-.lifecycle-bar-chart__active-filter-heading {
-  font-size: var(--text-xs);
+.lifecycle-bar-chart__active-filters-label {
+  font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--text-secondary);
-  letter-spacing: 0.03em;
   flex-shrink: 0;
+  line-height: var(--leading-snug);
 }
 
-.lifecycle-bar-chart__active-filter-tags {
+.lifecycle-bar-chart__selection-tags {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -326,42 +328,78 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  min-width: 0;
 }
 
-.lifecycle-bar-chart__active-filter-tags li {
+.lifecycle-bar-chart__selection-tags li {
   margin: 0;
 }
 
-.lifecycle-bar-chart .lifecycle-bar-chart__filter-chip.chip--outline {
-  background-color: var(--surface-bg, #ffffff);
-  border-color: var(--border-color);
-  color: var(--text-primary);
-  cursor: default;
+/* Filter tags: outline Button, 4px radius; brand fill + white label/icon + full interaction states. */
+.lifecycle-bar-chart .lifecycle-bar-chart__filter-button.btn {
+  --filter-tag-bg: #4c92d9;
+  --filter-tag-bg-hover: #3d7ebf;
+  --filter-tag-bg-active: #3270b0;
+  border-radius: var(--radius-04);
+  justify-content: center;
+  font-weight: var(--font-normal);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  max-width: min(100%, 280px);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    opacity var(--transition-fast);
 }
 
-.lifecycle-bar-chart .lifecycle-bar-chart__filter-chip.chip--outline:hover {
-  background-color: var(--hover-bg);
-  border-color: var(--border-color);
-  color: var(--text-primary);
+.lifecycle-bar-chart .lifecycle-bar-chart__filter-button.btn--outline {
+  background-color: var(--filter-tag-bg);
+  border: 1px solid var(--filter-tag-bg);
+  color: #fff;
 }
 
-.lifecycle-bar-chart .lifecycle-bar-chart__filter-chip .chip__remove {
-  cursor: pointer;
-  color: var(--text-secondary);
+.lifecycle-bar-chart .lifecycle-bar-chart__filter-button.btn--outline:hover:not(:disabled):not(.btn--disabled) {
+  background-color: var(--filter-tag-bg-hover);
+  border-color: var(--filter-tag-bg-hover);
+  color: #fff;
+  box-shadow: none;
 }
 
-.lifecycle-bar-chart__filter-chip-inner {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  max-width: 240px;
+.lifecycle-bar-chart .lifecycle-bar-chart__filter-button.btn--outline:active:not(:disabled):not(.btn--disabled) {
+  background-color: var(--filter-tag-bg-active);
+  border-color: var(--filter-tag-bg-active);
+  color: #fff;
+  box-shadow: var(--shadow-inset-sm);
 }
 
-.lifecycle-bar-chart__filter-chip-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
+.lifecycle-bar-chart .lifecycle-bar-chart__filter-button.btn--outline:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.lifecycle-bar-chart .lifecycle-bar-chart__filter-button.btn--outline:disabled,
+.lifecycle-bar-chart .lifecycle-bar-chart__filter-button.btn--outline.btn--disabled {
+  background-color: var(--filter-tag-bg);
+  border-color: var(--filter-tag-bg);
+  color: #fff;
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.lifecycle-bar-chart .lifecycle-bar-chart__filter-button svg {
   flex-shrink: 0;
+  color: currentColor;
+}
+
+.lifecycle-bar-chart__filter-button-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
 }
 
 .lifecycle-bar-chart__legend {

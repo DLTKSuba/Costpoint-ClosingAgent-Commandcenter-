@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useId, useMemo } from 'react'
 import clsx from 'clsx'
-import { Chip } from './Chip'
+import { Button } from './Button'
 import './LifecycleBarChart.css'
 
 export interface LifecycleBarChartBar {
@@ -44,7 +44,7 @@ export function LifecycleBarChart({
   selectedBarIds: selectedBarIdsProp,
   onBarToggle,
 }: LifecycleBarChartProps) {
-  const activeFilterRegionId = useId().replace(/:/g, '')
+  const activeFiltersLabelId = useId().replace(/:/g, '')
   const selectedBarIds = selectedBarIdsProp ?? []
 
   const ticks = 5
@@ -69,6 +69,37 @@ export function LifecycleBarChart({
     >
       <div className="lifecycle-bar-chart__header">
         <h3 className="lifecycle-bar-chart__title">{title}</h3>
+        {onBarToggle != null && selectedBarsInChartOrder.length > 0 && (
+          <div className="lifecycle-bar-chart__active-filters">
+            <span className="lifecycle-bar-chart__active-filters-label" id={activeFiltersLabelId}>
+              Active Filters:
+            </span>
+            <ul
+              className="lifecycle-bar-chart__selection-tags"
+              role="list"
+              aria-labelledby={activeFiltersLabelId}
+              aria-live="polite"
+            >
+              {selectedBarsInChartOrder.map((bar) => (
+                <li key={bar.id}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    icon="x-mark"
+                    iconPosition="right"
+                    className="lifecycle-bar-chart__filter-button"
+                    onClick={() => {
+                      onBarToggle(bar.id)
+                    }}
+                  >
+                    <span className="lifecycle-bar-chart__filter-button-label">{bar.label}</span>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="lifecycle-bar-chart__plot">
@@ -181,43 +212,6 @@ export function LifecycleBarChart({
           })}
         </div>
       </div>
-
-      {onBarToggle != null && selectedBarsInChartOrder.length > 0 && (
-        <div className="lifecycle-bar-chart__active-filter" aria-live="polite">
-          <span className="lifecycle-bar-chart__active-filter-heading" id={activeFilterRegionId}>
-            Active filter
-          </span>
-          <ul
-            className="lifecycle-bar-chart__active-filter-tags"
-            role="list"
-            aria-labelledby={activeFilterRegionId}
-          >
-            {selectedBarsInChartOrder.map((bar) => (
-              <li key={bar.id}>
-                <Chip
-                  type="chip"
-                  size="sm"
-                  variant="outline"
-                  removable
-                  className="lifecycle-bar-chart__filter-chip"
-                  onRemove={() => {
-                    onBarToggle(bar.id)
-                  }}
-                >
-                  <span className="lifecycle-bar-chart__filter-chip-inner">
-                    <span
-                      className="lifecycle-bar-chart__filter-chip-swatch"
-                      style={{ backgroundColor: bar.color }}
-                      aria-hidden
-                    />
-                    {bar.label}
-                  </span>
-                </Chip>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       {legendItems != null && legendItems.length > 0 && (
         <div className="lifecycle-bar-chart__legend">
