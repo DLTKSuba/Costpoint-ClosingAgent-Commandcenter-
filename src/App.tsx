@@ -139,7 +139,7 @@ const REQUISITION_ROWS: RequisitionRow[] = [
     vendorId: 'VND-900101',
     vendor: 'Acme Office Supplies',
     amount: '$1,250.00',
-    statusLabel: 'Pending Approval',
+    statusLabel: 'In-Approval',
     stageIndices: [0, 2],
     overdue: '2/5',
     overdueUrgent: true,
@@ -158,7 +158,7 @@ const REQUISITION_ROWS: RequisitionRow[] = [
     vendorId: 'VND-900205',
     vendor: 'Litware Medical Devices',
     amount: '$3,890.25',
-    statusLabel: 'Pending Approval',
+    statusLabel: 'In-Approval',
     stageIndices: [0, 2],
     overdue: '1/6',
     overdueUrgent: true,
@@ -304,7 +304,7 @@ function requisitionLineRowsForPr(row: RequisitionRow): RequisitionLineRow[] {
           : 'Standard hardware line — non-stock'
     return {
       line: String(n),
-      status: statusEmpty ? '' : n === 1 ? 'Pending Approval' : 'Buyer Review',
+      status: statusEmpty ? '' : n === 1 ? 'In-Approval' : 'Buyer Review',
       projectId: `PRJ-${2400 + n}`,
       projectName: n % 2 === 0 ? 'HQ Facilities Refresh' : 'Field Services Expansion',
       item: `ITM-${row.id.replace(/^PR-/, '')}-${String(n).padStart(2, '0')}`,
@@ -373,7 +373,7 @@ const REQUISITION_CHART_BARS: LifecycleBarChartBar[] = [
   },
   {
     id: 'pending-approval',
-    label: 'Pending Approval',
+    label: 'In-Approval',
     value: 45,
     color: REQ_LIFECYCLE_COLORS.pendingApproval,
     description:
@@ -390,7 +390,7 @@ const REQUISITION_CHART_BARS: LifecycleBarChartBar[] = [
 ]
 
 const PO_CHART_BARS: LifecycleBarChartBar[] = [
-  { id: 'po-pending-approval', label: 'Pending Approval', value: 168, color: '#f97316' },
+  { id: 'po-pending-approval', label: 'In-Approval', value: 168, color: '#f97316' },
   { id: 'po-pending-receipt', label: 'Pending Receipt', value: 166, color: '#dc2626' },
   { id: 'po-pending-inspection', label: 'Pending Inspection', value: 40, color: '#ec4899' },
   { id: 'po-awaiting-inv', label: 'Awaiting Invoice', value: 29, color: '#1d4ed8' },
@@ -422,7 +422,7 @@ const REQ_STATUS_DOT_COLORS = [
 const REQ_STATUS_STAGE_LABELS = [
   'Pending',
   'Rejected',
-  'Pending Approval',
+  'In-Approval',
   'Pending PO Creation',
 ] as const
 
