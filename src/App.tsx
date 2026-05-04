@@ -215,7 +215,7 @@ const REQUISITION_ROWS: RequisitionRow[] = [
     vendorId: 'VND-900503',
     vendor: 'Contoso Training Group',
     amount: '$2,100.00',
-    statusLabel: 'Pending Submittal',
+    statusLabel: 'Pending',
     stageIndices: [0],
     overdue: '1/3',
     overdueUrgent: true,
@@ -234,7 +234,7 @@ const REQUISITION_ROWS: RequisitionRow[] = [
     vendorId: 'VND-900606',
     vendor: 'Adventure Works IT',
     amount: '$475.90',
-    statusLabel: 'Pending Submittal',
+    statusLabel: 'Pending',
     stageIndices: [0],
     overdue: '0/2',
     requestedBy: 'Casey Brooks',
@@ -358,7 +358,7 @@ const REQ_LIFECYCLE_COLORS = {
 const REQUISITION_CHART_BARS: LifecycleBarChartBar[] = [
   {
     id: 'pending-submittal',
-    label: 'Pending Submittal',
+    label: 'Pending',
     value: 100,
     color: REQ_LIFECYCLE_COLORS.pendingSubmittal,
     description:
@@ -420,7 +420,7 @@ const REQ_STATUS_DOT_COLORS = [
 ] as const
 
 const REQ_STATUS_STAGE_LABELS = [
-  'Pending Submittal',
+  'Pending',
   'Rejected',
   'Pending Approval',
   'Pending PO Creation',
@@ -1256,26 +1256,6 @@ function HomeShell() {
     return indices.length === 0 ? null : [...new Set(indices)].sort((a, b) => a - b)
   }, [poLifecycleBarIds])
 
-  const reqStatusTableHint = useMemo(() => {
-    if (reqLifecycleBarIds.length === 0) return null
-    const labels = reqLifecycleBarIds
-      .map((id) => REQUISITION_CHART_BARS.find((b) => b.id === id)?.label)
-      .filter((l): l is string => l != null && l !== '')
-    if (labels.length === 0) return null
-    const quoted = labels.map((l) => `"${l}"`).join(', ')
-    return `Table shows requisitions matching any of: ${quoted}. Click a selected bar to remove it, or Refresh to clear all.`
-  }, [reqLifecycleBarIds])
-
-  const poStatusTableHint = useMemo(() => {
-    if (poLifecycleBarIds.length === 0) return null
-    const labels = poLifecycleBarIds
-      .map((id) => PO_CHART_BARS.find((b) => b.id === id)?.label)
-      .filter((l): l is string => l != null && l !== '')
-    if (labels.length === 0) return null
-    const quoted = labels.map((l) => `"${l}"`).join(', ')
-    return `Table shows orders in any of: ${quoted}. Click a selected bar to remove it, or Refresh to clear all.`
-  }, [poLifecycleBarIds])
-
   const selectedRequisition = useMemo(
     () => REQUISITION_ROWS.find((r) => r.id === selectedRequisitionId) ?? null,
     [selectedRequisitionId],
@@ -1362,6 +1342,7 @@ function HomeShell() {
   return (
     <ShellLayout
       {...themeProps}
+      className="command-center-shell"
       pageHeaderTitle="Command Center"
       pageHeaderShowDefaultButtons={false}
     >
@@ -1407,7 +1388,6 @@ function HomeShell() {
               tableWrapperClassName="command-center-table-detail-anchor"
               selectedBarIds={reqLifecycleBarIds}
               onBarToggle={toggleReqLifecycleBar}
-              statusTableHint={reqStatusTableHint}
             >
               <>
                 <div className="command-center-table-detail-stack">
@@ -1445,7 +1425,6 @@ function HomeShell() {
               yAxisMax={200}
               selectedBarIds={poLifecycleBarIds}
               onBarToggle={togglePoLifecycleBar}
-              statusTableHint={poStatusTableHint}
             >
               <Table
                 headerVariant="white"

@@ -48,6 +48,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Command Center: right icon rail — no visible line on the content side (overrides Harmony border). */
+.command-center-shell .right-sidebar__section {
+  border-left-width: 0 !important;
+  border-left-style: none !important;
+  border-left-color: transparent !important;
+}
+
 /* Command Center home card + body: white surface per design reference */
 .command-center-home.card {
   background-color: #ffffff;
@@ -69,9 +76,26 @@
   padding-bottom: var(--space-1, 0.25rem);
 }
 
-.command-center-tab-row .tabstrip {
-  flex-shrink: 0;
+/* Share the row with Refresh; avoid width:100% + sibling fighting (can draw a 1px edge on the right). */
+.command-center-tab-row .tabstrip.tabstrip--command-center-tabs {
+  flex: 1 1 auto;
+  width: auto;
   min-width: 0;
+}
+
+/*
+ * Far-right hairline on the tab row: TabStrip uses overflow-x: clip on .tabstrip__tabs, which
+ * can render a vertical edge at the clip boundary; command center has few tabs — use visible.
+ * Also clear any right border on the tab chrome.
+ */
+.command-center-tab-row .tabstrip--command-center-tabs .tabstrip__tabs {
+  overflow-x: visible;
+}
+
+.command-center-tab-row .tabstrip--command-center-tabs .tabstrip__container,
+.command-center-tab-row .tabstrip--command-center-tabs .tabstrip__nav {
+  border-right: none;
+  box-shadow: none;
 }
 
 /* Command Center data tables: white header row + sort / filter chrome (reference UI). */
