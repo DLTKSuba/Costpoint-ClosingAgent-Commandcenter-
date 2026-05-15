@@ -71,6 +71,77 @@
   display: block;
 }
 
+/* Multi-select: Harmony Checkbox list + Apply / Cancel */
+.dropdown__menu--checkbox-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  min-width: min(18rem, 100%);
+  max-height: min(22rem, 70vh);
+  background-color: #fff;
+}
+
+.dropdown__menu--checkbox-panel .dropdown__menu-body {
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  background-color: #fff;
+}
+
+.dropdown__menu-search {
+  flex-shrink: 0;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-color);
+  background-color: #fff;
+}
+
+.dropdown__menu-search .input-wrapper {
+  width: 100%;
+}
+
+.dropdown__menu-search-input {
+  width: 100%;
+}
+
+.dropdown__menu-add-row {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border-color);
+  background-color: #fff;
+}
+
+.dropdown__menu-row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.dropdown__menu-row .checkbox-wrapper {
+  width: 100%;
+}
+
+.dropdown__menu-footer {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-3);
+  border-top: 1px solid var(--border-color);
+  background-color: #fff;
+  flex-shrink: 0;
+}
+
+.dropdown__menu-footer .btn {
+  flex-shrink: 0;
+}
+
 .dropdown__item {
   display: flex;
   align-items: center;
@@ -93,6 +164,26 @@
 .dropdown__item.is-selected {
   background-color: var(--theme-primary-light);
   color: var(--theme-primary);
+}
+
+.dropdown__item--multi {
+  gap: var(--space-2);
+  padding-left: var(--space-3);
+}
+
+.dropdown__item-check {
+  flex-shrink: 0;
+  width: 1.125rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  color: var(--theme-primary);
+}
+
+.dropdown__item-label {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
 }
 
 .dropdown__item:disabled,
@@ -132,6 +223,100 @@ html.theme-cp .dropdown__menu {
   border-radius: var(--radius-04);
 }
 
+/*
+ * Trigger as Harmony outline button (matches `Button variant="outline" size="sm|md|lg"`).
+ * `Dropdown.css` loads after global `.btn` rules, so `.dropdown__trigger` was winning on
+ * height/padding/font/background — re-apply button metrics here at higher specificity.
+ */
+.dropdown__trigger.btn {
+  justify-content: flex-start;
+  width: auto;
+  min-width: unset;
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  /* Let `.btn--outline` own border; clear field-style chrome */
+  background-color: transparent;
+}
+
+.dropdown__trigger.btn .dropdown__value {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: left;
+}
+
+.dropdown__trigger.btn .dropdown__chevron {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: currentColor;
+  opacity: 0.85;
+}
+
+.dropdown__trigger.btn.dropdown__trigger--fixed-width .dropdown__value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown__trigger.btn.btn--outline.btn--sm {
+  height: var(--button-height-sm);
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  gap: var(--space-1-5);
+  max-width: min(18rem, 100%);
+  --btn-spinner-size: var(--spinner-size-sm);
+  --btn-spinner-stroke-width: var(--spinner-stroke-width-sm);
+}
+
+.dropdown__trigger.btn.btn--outline.btn--md {
+  height: var(--button-height-md);
+  padding: 0 var(--space-4);
+  font-size: var(--text-base);
+  gap: var(--space-2);
+  max-width: min(20rem, 100%);
+  --btn-spinner-size: var(--spinner-size-md);
+  --btn-spinner-stroke-width: var(--spinner-stroke-width-md);
+}
+
+.dropdown__trigger.btn.btn--outline.btn--lg {
+  height: var(--button-height-lg);
+  padding: 0 var(--space-6);
+  font-size: var(--text-lg);
+  gap: var(--space-2);
+  max-width: min(22rem, 100%);
+  --btn-spinner-size: var(--spinner-size-lg);
+  --btn-spinner-stroke-width: var(--spinner-stroke-width-lg);
+}
+
+.dropdown__trigger.btn.btn--outline.btn--sm:hover,
+.dropdown__trigger.btn.btn--outline.btn--md:hover,
+.dropdown__trigger.btn.btn--outline.btn--lg:hover {
+  background-color: var(--hover-bg);
+}
+
+.dropdown__trigger.btn.btn--outline.btn--sm:active,
+.dropdown__trigger.btn.btn--outline.btn--md:active,
+.dropdown__trigger.btn.btn--outline.btn--lg:active {
+  box-shadow: var(--shadow-inset-sm);
+}
+
+.dropdown__trigger.btn.btn--outline.btn--sm:focus,
+.dropdown__trigger.btn.btn--outline.btn--sm:focus-visible,
+.dropdown__trigger.btn.btn--outline.btn--md:focus,
+.dropdown__trigger.btn.btn--outline.btn--md:focus-visible,
+.dropdown__trigger.btn.btn--outline.btn--lg:focus,
+.dropdown__trigger.btn.btn--outline.btn--lg:focus-visible {
+  outline: 1px solid var(--card-bg);
+  outline-offset: 0;
+  box-shadow: var(--focus-ring-primary);
+  border-color: var(--border-color);
+}
+
+html.theme-cp .dropdown__trigger.btn.btn--outline.btn--sm,
+html.theme-cp .dropdown__trigger.btn.btn--outline.btn--md,
+html.theme-cp .dropdown__trigger.btn.btn--outline.btn--lg {
+  border-radius: var(--radius-04);
+}
+
 @media (max-width: var(--breakpoint-md)) {
   .dropdown {
     width: 100%;
@@ -141,6 +326,27 @@ html.theme-cp .dropdown__menu {
     width: 100%;
     min-width: 100%;
     min-height: 44px;
+  }
+
+  .dropdown__trigger.btn.btn--outline.btn--sm {
+    width: auto;
+    min-width: unset;
+    max-width: 100%;
+    min-height: var(--button-height-sm);
+  }
+
+  .dropdown__trigger.btn.btn--outline.btn--md {
+    width: auto;
+    min-width: unset;
+    max-width: 100%;
+    min-height: var(--button-height-md);
+  }
+
+  .dropdown__trigger.btn.btn--outline.btn--lg {
+    width: auto;
+    min-width: unset;
+    max-width: 100%;
+    min-height: var(--button-height-lg);
   }
 
   .dropdown__menu {

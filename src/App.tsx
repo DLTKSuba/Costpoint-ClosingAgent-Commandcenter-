@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import clsx from 'clsx'
 import { Routes, Route } from 'react-router-dom'
@@ -7,7 +7,8 @@ import type { ShellLayoutProps } from './components/harmony/ShellLayout'
 import { Card } from './components/harmony/Card'
 import { Button } from './components/harmony/Button'
 import { TabStrip } from './components/harmony/TabStrip'
-import { Table } from './components/harmony/Table'
+import { Table, type SortColumn } from './components/harmony/Table'
+import { Dropdown, type Option } from './components/harmony/Dropdown'
 import { LifecycleBarChart } from './components/harmony/LifecycleBarChart'
 import type { LifecycleBarChartBar } from './components/harmony/LifecycleBarChart'
 import { Link } from './components/harmony/Link'
@@ -26,7 +27,7 @@ const DEFAULT_THEME = 'theme-cp'
  */
 const THEME_SHELL_PROPS: Record<string, Partial<ShellLayoutProps>> = {
   'theme-cp': {
-    productName: 'CP',
+    productName: 'Costpoint',
     logoSrc: '/logos/CPVPLogo.svg',
     showFooter: false,
     showFloatingNav: true,
@@ -56,11 +57,303 @@ const THEME_SHELL_PROPS: Record<string, Partial<ShellLayoutProps>> = {
   },
 }
 
-const REQ_MAIN_TAB_IDS = ['requisitions', 'purchase-orders'] as const
+/** Command Center primary tabs (Closing Manager reference UI). */
+const CC_MAIN_TAB_IDS = ['general-ledger', 'financial-review', 'closing-manager'] as const
+
+const CLOSING_ROLE_OPTIONS: Option[] = [
+  { value: 'accountant', label: 'Accountant' },
+  { value: 'reviewer', label: 'Reviewer' },
+]
+
+const CLOSING_USER_FILTER_ALL = '__all__'
+const CLOSING_CURRENT_USER_ID = 'joe'
+
+const BASE_CLOSING_ASSIGNEE_OPTIONS: Option[] = [
+  { value: 'joe', label: 'Joe Smith (You)' },
+  { value: 'jane', label: 'Jane Doe' },
+  { value: 'alice', label: 'Alice Chen' },
+  { value: 'bob', label: 'Bob Martinez' },
+]
+
+const CLOSING_PROGRESS_BARS: LifecycleBarChartBar[] = [
+  {
+    id: 'not-started',
+    label: 'Not Started',
+    value: 1,
+    color: '#94a3b8',
+    description: 'Tasks not yet started',
+  },
+  {
+    id: 'ready',
+    label: 'Ready',
+    value: 1,
+    color: '#22c55e',
+    description: 'Tasks ready to run',
+  },
+  {
+    id: 'in-process',
+    label: 'In-Process',
+    value: 1,
+    color: '#eab308',
+    description: 'Tasks in progress',
+  },
+  {
+    id: 'waiting',
+    label: 'Waiting',
+    value: 2,
+    color: '#ef4444',
+    description: 'Tasks waiting on dependencies',
+  },
+]
+
+const CLOSING_PLAN_SORT_COLUMNS_BASE: SortColumn[] = [
+  { key: 'category', label: 'Category' },
+  { key: 'task', label: 'Task' },
+  { key: 'application', label: 'Application Name' },
+  { key: 'closingDay', label: 'Closing Day' },
+  { key: 'status', label: 'Status' },
+]
+
+const CLOSING_PLAN_SORT_COLUMNS_WITH_USER: SortColumn[] = [
+  { key: 'category', label: 'Category' },
+  { key: 'task', label: 'Task' },
+  { key: 'application', label: 'Application Name' },
+  { key: 'user', label: 'User' },
+  { key: 'closingDay', label: 'Closing Day' },
+  { key: 'status', label: 'Status' },
+]
+
+type ClosingTaskStatus = 'waiting' | 'in-process' | 'ready'
+
+type ClosingPlanTaskRow = {
+  id: string
+  category: string
+  task: string
+  applicationName: string | null
+  applicationHref?: string
+  closingDay: string
+  status: ClosingTaskStatus
+  /** Assignee for Command Center user filter demo. */
+  assigneeId: string
+  /** Display name for User column when multiple / all assignees are in scope. */
+  assigneeName: string
+}
+
+/** Shown when a single assignee is selected (narrow view). */
+const CLOSING_PLAN_TASK_ROWS_BASE: ClosingPlanTaskRow[] = [
+  {
+    id: '1',
+    category: 'Financial Analysis',
+    task: 'Add PL Table with metrics and drills',
+    applicationName: null,
+    closingDay: 'Day 1',
+    status: 'waiting',
+    assigneeId: 'joe',
+    assigneeName: 'Joe Smith (You)',
+  },
+  {
+    id: '2',
+    category: 'Financial Analysis',
+    task: 'Budgets for Fin Metrics',
+    applicationName: null,
+    closingDay: 'Day 2',
+    status: 'in-process',
+    assigneeId: 'jane',
+    assigneeName: 'Jane Doe',
+  },
+  {
+    id: '3',
+    category: 'Financial Analysis',
+    task: 'Finalize Journal Entries',
+    applicationName: 'Manage Journal Entries',
+    applicationHref: '#',
+    closingDay: 'Day 1',
+    status: 'ready',
+    assigneeId: 'alice',
+    assigneeName: 'Alice Chen',
+  },
+]
+
+/** Extra tasks when “All users” or multiple assignees are selected (broader plan view). */
+const CLOSING_PLAN_TASK_ROWS_EXTENDED: ClosingPlanTaskRow[] = [
+  {
+    id: '4',
+    category: 'Period Close',
+    task: 'Validate subledger tie-outs',
+    applicationName: 'Subledger Control',
+    applicationHref: '#',
+    closingDay: 'Day 1',
+    status: 'in-process',
+    assigneeId: 'joe',
+    assigneeName: 'Joe Smith (You)',
+  },
+  {
+    id: '5',
+    category: 'Period Close',
+    task: 'Run allocation sets',
+    applicationName: null,
+    closingDay: 'Day 2',
+    status: 'waiting',
+    assigneeId: 'jane',
+    assigneeName: 'Jane Doe',
+  },
+  {
+    id: '6',
+    category: 'Reporting',
+    task: 'Publish management flash',
+    applicationName: 'FR Studio',
+    applicationHref: '#',
+    closingDay: 'Day 2',
+    status: 'ready',
+    assigneeId: 'alice',
+    assigneeName: 'Alice Chen',
+  },
+  {
+    id: '7',
+    category: 'Reporting',
+    task: 'Reconcile intercompany eliminations',
+    applicationName: null,
+    closingDay: 'Day 3',
+    status: 'waiting',
+    assigneeId: 'bob',
+    assigneeName: 'Bob Martinez',
+  },
+  {
+    id: '8',
+    category: 'Compliance',
+    task: 'SOX control sign-off package',
+    applicationName: 'GRC Workspace',
+    applicationHref: '#',
+    closingDay: 'Day 3',
+    status: 'in-process',
+    assigneeId: 'joe',
+    assigneeName: 'Joe Smith (You)',
+  },
+  {
+    id: '9',
+    category: 'Compliance',
+    task: 'Document variance thresholds',
+    applicationName: null,
+    closingDay: 'Day 4',
+    status: 'ready',
+    assigneeId: 'bob',
+    assigneeName: 'Bob Martinez',
+  },
+  {
+    id: '10',
+    category: 'Cash',
+    task: 'Bank reconciliation sweep',
+    applicationName: 'Cash Management',
+    applicationHref: '#',
+    closingDay: 'Day 1',
+    status: 'ready',
+    assigneeId: 'alice',
+    assigneeName: 'Alice Chen',
+  },
+  {
+    id: '11',
+    category: 'Cash',
+    task: 'Confirm wire cutoff times',
+    applicationName: null,
+    closingDay: 'Day 2',
+    status: 'waiting',
+    assigneeId: 'jane',
+    assigneeName: 'Jane Doe',
+  },
+]
+
+function closingTaskStatusBadge(status: ClosingTaskStatus) {
+  const map: Record<
+    ClosingTaskStatus,
+    { label: string; className: string }
+  > = {
+    waiting: { label: 'Waiting', className: 'closing-task-status closing-task-status--waiting' },
+    'in-process': {
+      label: 'In Process',
+      className: 'closing-task-status closing-task-status--in-process',
+    },
+    ready: { label: 'Ready', className: 'closing-task-status closing-task-status--ready' },
+  }
+  const { label, className } = map[status]
+  return <span className={className}>{label}</span>
+}
+
+function closingPlanShowUserColumn(userFilters: string[]): boolean {
+  const allSelected =
+    userFilters.length === 1 && userFilters[0] === CLOSING_USER_FILTER_ALL
+  const selectedIds = userFilters.filter((id) => id !== CLOSING_USER_FILTER_ALL)
+  return allSelected || selectedIds.length > 1
+}
+
+function closingPlanTaskPool(userFilters: string[]): ClosingPlanTaskRow[] {
+  const expanded = closingPlanShowUserColumn(userFilters)
+  return expanded
+    ? [...CLOSING_PLAN_TASK_ROWS_BASE, ...CLOSING_PLAN_TASK_ROWS_EXTENDED]
+    : CLOSING_PLAN_TASK_ROWS_BASE
+}
+
+function assigneeLabelForRow(
+  row: ClosingPlanTaskRow,
+  assigneeOptions: Option[]
+): string {
+  return assigneeOptions.find((o) => o.value === row.assigneeId)?.label ?? row.assigneeName
+}
+
+function ClosingPlanTasksTableBody({
+  userFilters,
+  assigneeOptions,
+  showUserColumn,
+}: {
+  userFilters: string[]
+  assigneeOptions: Option[]
+  showUserColumn: boolean
+}) {
+  const showAll =
+    userFilters.length === 1 && userFilters[0] === CLOSING_USER_FILTER_ALL
+  const pool = closingPlanTaskPool(userFilters)
+  const visibleRows = showAll
+    ? pool
+    : pool.filter((row) => userFilters.includes(row.assigneeId))
+
+  const colSpan = showUserColumn ? 6 : 5
+
+  return (
+    <tbody>
+      {visibleRows.length === 0 ? (
+        <tr>
+          <td colSpan={colSpan} className="text-left text-secondary">
+            No tasks match the selected users.
+          </td>
+        </tr>
+      ) : (
+        visibleRows.map((row) => (
+          <tr key={row.id}>
+            <td className="text-left">{row.category}</td>
+            <td className="text-left">{row.task}</td>
+            <td className="text-left">
+              {row.applicationName == null ? (
+                '\u00A0'
+              ) : row.applicationHref ? (
+                <Link href={row.applicationHref}>{row.applicationName}</Link>
+              ) : (
+                row.applicationName
+              )}
+            </td>
+            {showUserColumn ? (
+              <td className="text-left">{assigneeLabelForRow(row, assigneeOptions)}</td>
+            ) : null}
+            <td className="text-left">{row.closingDay}</td>
+            <td className="text-left">{closingTaskStatusBadge(row.status)}</td>
+          </tr>
+        ))
+      )}
+    </tbody>
+  )
+}
 
 const PO_DETAIL_TAB_PREFIX = 'po-detail:' as const
 
-function poDetailTabId(poId: string) {
+export function poDetailTabId(poId: string) {
   return `${PO_DETAIL_TAB_PREFIX}${poId}`
 }
 
@@ -68,14 +361,14 @@ function isPoDetailTabId(id: string) {
   return id.startsWith(PO_DETAIL_TAB_PREFIX)
 }
 
-function poIdFromDetailTabId(id: string): string | null {
+export function poIdFromDetailTabId(id: string): string | null {
   if (!isPoDetailTabId(id)) return null
   return id.slice(PO_DETAIL_TAB_PREFIX.length)
 }
 
 const PR_DETAIL_TAB_PREFIX = 'pr-detail:' as const
 
-function prDetailTabId(prId: string) {
+export function prDetailTabId(prId: string) {
   return `${PR_DETAIL_TAB_PREFIX}${prId}`
 }
 
@@ -83,7 +376,7 @@ function isPrDetailTabId(id: string) {
   return id.startsWith(PR_DETAIL_TAB_PREFIX)
 }
 
-function prIdFromDetailTabId(id: string): string | null {
+export function prIdFromDetailTabId(id: string): string | null {
   if (!isPrDetailTabId(id)) return null
   return id.slice(PR_DETAIL_TAB_PREFIX.length)
 }
@@ -355,7 +648,7 @@ const REQ_LIFECYCLE_COLORS = {
   pendingPoCreation: '#1d4ed8',
 } as const
 
-const REQUISITION_CHART_BARS: LifecycleBarChartBar[] = [
+export const REQUISITION_CHART_BARS: LifecycleBarChartBar[] = [
   {
     id: 'pending-submittal',
     label: 'Pending',
@@ -558,7 +851,7 @@ function commandCenterHeaderTh(
   )
 }
 
-const REQUISITION_TABLE_HEADER = (
+export const REQUISITION_TABLE_HEADER = (
   <thead>
     <tr>
       {commandCenterHeaderTh(
@@ -636,7 +929,7 @@ function PrLineDetailsTableBody({ rows }: { rows: RequisitionLineRow[] }) {
   )
 }
 
-function RequisitionTableBody({
+export function RequisitionTableBody({
   rows,
   selectedId,
   onSelectRow,
@@ -678,7 +971,7 @@ function RequisitionTableBody({
   )
 }
 
-function RequisitionSidePanel({
+export function RequisitionSidePanel({
   row,
   onClose,
   onOpenRequisitionReportTab,
@@ -971,7 +1264,7 @@ type PoTableRowData = {
   overdueUrgent?: boolean
 }
 
-const PO_TABLE_ROWS: PoTableRowData[] = [
+export const PO_TABLE_ROWS: PoTableRowData[] = [
   {
     id: 'PO-1039',
     release: 'REL-2024-001',
@@ -1006,7 +1299,7 @@ const PO_TABLE_ROWS: PoTableRowData[] = [
   },
 ]
 
-const PO_TABLE_HEADER = (
+export const PO_TABLE_HEADER = (
   <thead>
     <tr>
       {commandCenterHeaderTh('PO ID')}
@@ -1020,7 +1313,7 @@ const PO_TABLE_HEADER = (
   </thead>
 )
 
-function PoPurchaseOrdersTableBody({
+export function PoPurchaseOrdersTableBody({
   rows,
   onOpenOrder,
   lifecycleChartFilterStageIndices = null,
@@ -1125,7 +1418,7 @@ function PoOrderPrSummaryAccordion({ poId }: { poId: string }) {
   )
 }
 
-function PoOrderDetailView({ poId }: { poId: string }) {
+export function PoOrderDetailView({ poId }: { poId: string }) {
   return (
     <div className="command-center-order-detail">
       <PoOrderPrSummaryAccordion poId={poId} />
@@ -1137,7 +1430,7 @@ function PoOrderDetailView({ poId }: { poId: string }) {
   )
 }
 
-function RequisitionDetailsTabView({ prId }: { prId: string }) {
+export function RequisitionDetailsTabView({ prId }: { prId: string }) {
   const row = REQUISITION_ROWS.find((r) => r.id === prId)
   const lineRows = useMemo(() => (row != null ? requisitionLineRowsForPr(row) : []), [row])
   if (row == null) {
@@ -1198,146 +1491,73 @@ function RequisitionDetailsTabView({ prId }: { prId: string }) {
 }
 
 function HomeShell() {
-  const [activeTabId, setActiveTabId] = useState<string>('requisitions')
-  const [prDetailRequisitionIds, setPrDetailRequisitionIds] = useState<string[]>([])
-  const [poDetailOrderIds, setPoDetailOrderIds] = useState<string[]>([])
+  const [activeTabId, setActiveTabId] = useState<string>('closing-manager')
   const [refreshTick, setRefreshTick] = useState(0)
-  const [selectedRequisitionId, setSelectedRequisitionId] = useState<string | null>(null)
-  const [reqLifecycleBarIds, setReqLifecycleBarIds] = useState<string[]>([])
-  const [poLifecycleBarIds, setPoLifecycleBarIds] = useState<string[]>([])
+  const [roleFilter, setRoleFilter] = useState('accountant')
+  const [assigneeOptions, setAssigneeOptions] = useState<Option[]>(BASE_CLOSING_ASSIGNEE_OPTIONS)
+
+  const handleAddAssigneeFromSearch = useCallback((label: string): Option => {
+    const trimmed = label.trim()
+    let resolved!: Option
+    setAssigneeOptions((prev) => {
+      const hit = prev.find((o) => o.label.trim().toLowerCase() === trimmed.toLowerCase())
+      if (hit) {
+        resolved = hit
+        return prev
+      }
+      resolved = { value: `assignee-${Date.now()}`, label: trimmed }
+      return [...prev, resolved]
+    })
+    return resolved
+  }, [])
+  const [userFilters, setUserFilters] = useState<string[]>([CLOSING_CURRENT_USER_ID])
+  const roleDropdownId = useId().replace(/:/g, '')
+  const userDropdownId = useId().replace(/:/g, '')
   const themeProps = THEME_SHELL_PROPS[DEFAULT_THEME] ?? THEME_SHELL_PROPS['theme-cp']
 
-  const toggleReqLifecycleBar = useCallback((barId: string) => {
-    setReqLifecycleBarIds((prev) =>
-      prev.includes(barId) ? prev.filter((id) => id !== barId) : [...prev, barId],
-    )
-  }, [])
-
-  const togglePoLifecycleBar = useCallback((barId: string) => {
-    setPoLifecycleBarIds((prev) =>
-      prev.includes(barId) ? prev.filter((id) => id !== barId) : [...prev, barId],
-    )
-  }, [])
-
-  const filteredRequisitionRows = useMemo(() => {
-    if (reqLifecycleBarIds.length === 0) return REQUISITION_ROWS
-    const labels = new Set(
-      reqLifecycleBarIds
-        .map((id) => REQUISITION_CHART_BARS.find((b) => b.id === id)?.label)
-        .filter((l): l is string => l != null && l !== ''),
-    )
-    if (labels.size === 0) return REQUISITION_ROWS
-    return REQUISITION_ROWS.filter((r) => labels.has(r.statusLabel))
-  }, [reqLifecycleBarIds])
-
-  const filteredPoRows = useMemo(() => {
-    if (poLifecycleBarIds.length === 0) return PO_TABLE_ROWS
-    const indices = poLifecycleBarIds
-      .map((id) => PO_CHART_BARS.findIndex((b) => b.id === id))
-      .filter((i) => i >= 0)
-    if (indices.length === 0) return PO_TABLE_ROWS
-    const indexSet = new Set(indices)
-    return PO_TABLE_ROWS.filter((r) => r.stageIndices.some((si) => indexSet.has(si)))
-  }, [poLifecycleBarIds])
-
-  const reqLifecycleFilterStageIndices = useMemo(() => {
-    if (reqLifecycleBarIds.length === 0) return null
-    const indices = reqLifecycleBarIds
-      .map((id) => REQUISITION_CHART_BARS.findIndex((b) => b.id === id))
-      .filter((i) => i >= 0)
-    return indices.length === 0 ? null : [...new Set(indices)].sort((a, b) => a - b)
-  }, [reqLifecycleBarIds])
-
-  const poLifecycleFilterStageIndices = useMemo(() => {
-    if (poLifecycleBarIds.length === 0) return null
-    const indices = poLifecycleBarIds
-      .map((id) => PO_CHART_BARS.findIndex((b) => b.id === id))
-      .filter((i) => i >= 0)
-    return indices.length === 0 ? null : [...new Set(indices)].sort((a, b) => a - b)
-  }, [poLifecycleBarIds])
-
-  const selectedRequisition = useMemo(
-    () => REQUISITION_ROWS.find((r) => r.id === selectedRequisitionId) ?? null,
-    [selectedRequisitionId],
+  const closingPlanShowUser = useMemo(
+    () => closingPlanShowUserColumn(userFilters),
+    [userFilters],
   )
 
-  useEffect(() => {
-    if (selectedRequisitionId == null) return
-    if (!filteredRequisitionRows.some((r) => r.id === selectedRequisitionId)) {
-      setSelectedRequisitionId(null)
-    }
-  }, [filteredRequisitionRows, selectedRequisitionId])
+  const closingPlanSortColumns = useMemo(
+    () =>
+      closingPlanShowUser ? CLOSING_PLAN_SORT_COLUMNS_WITH_USER : CLOSING_PLAN_SORT_COLUMNS_BASE,
+    [closingPlanShowUser],
+  )
 
-  const openPoOrderDetailTab = (poId: string) => {
-    setPoDetailOrderIds((prev) => (prev.includes(poId) ? prev : [...prev, poId]))
-    setActiveTabId(poDetailTabId(poId))
-  }
-
-  const openPrRequisitionDetailTab = (prId: string) => {
-    setPrDetailRequisitionIds((prev) => (prev.includes(prId) ? prev : [...prev, prId]))
-    setActiveTabId(prDetailTabId(prId))
-  }
-
-  const closeClosableCommandCenterTab = (tabId: string) => {
-    const poId = poIdFromDetailTabId(tabId)
-    if (poId != null) {
-      setPoDetailOrderIds((prev) => prev.filter((id) => id !== poId))
-      setActiveTabId((current) => (current !== tabId ? current : 'purchase-orders'))
-      return
-    }
-    const prId = prIdFromDetailTabId(tabId)
-    if (prId != null) {
-      setPrDetailRequisitionIds((prev) => prev.filter((id) => id !== prId))
-      setActiveTabId((current) => (current !== tabId ? current : 'requisitions'))
-    }
-  }
-
-  useEffect(() => {
-    if (activeTabId !== 'requisitions') {
-      setSelectedRequisitionId(null)
-      setReqLifecycleBarIds([])
-    }
-    if (activeTabId !== 'purchase-orders') {
-      setPoLifecycleBarIds([])
-    }
-  }, [activeTabId])
-
-  useEffect(() => {
-    if (selectedRequisitionId == null) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelectedRequisitionId(null)
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [selectedRequisitionId])
-
-  const commandCenterTabs = useMemo(() => {
-    const base = REQ_MAIN_TAB_IDS.map((id) => ({
-      id,
-      label: id === 'requisitions' ? 'Requisitions' : 'Purchase Orders',
-      active: activeTabId === id,
-      showClose: false as const,
-    }))
-    const prDetailTabs = prDetailRequisitionIds.map((prId) => {
-      const id = prDetailTabId(prId)
-      return {
+  const commandCenterTabs = useMemo(
+    () =>
+      CC_MAIN_TAB_IDS.map((id) => ({
         id,
-        label: `Requisition Details : ${prId}`,
+        label:
+          id === 'general-ledger'
+            ? 'General Ledger'
+            : id === 'financial-review'
+              ? 'Financial Review'
+              : 'Closing Manager',
         active: activeTabId === id,
-        showClose: true as const,
-      }
-    })
-    const poDetailTabs = poDetailOrderIds.map((poId) => {
-      const id = poDetailTabId(poId)
-      return {
-        id,
-        label: `Order Details: ${poId}`,
-        active: activeTabId === id,
-        showClose: true as const,
-      }
-    })
-    return [...base, ...prDetailTabs, ...poDetailTabs]
-  }, [activeTabId, prDetailRequisitionIds, poDetailOrderIds])
+        showClose: false as const,
+      })),
+    [activeTabId],
+  )
+
+  const floatingNavActions = (
+    <>
+      <div className="floating-nav__buttons">
+        <button type="button" className="floating-nav__btn floating-nav__btn--secondary">
+          Full Screen
+        </button>
+        <button type="button" className="floating-nav__btn floating-nav__btn--secondary">
+          Close Command Center
+        </button>
+      </div>
+      <div className="floating-nav__divider" />
+      <button type="button" className="floating-nav__pin" aria-label="Pin navigation">
+        <Icon name="pin" size="md" className="floating-nav__pin-icon" />
+      </button>
+    </>
+  )
 
   return (
     <ShellLayout
@@ -1345,6 +1565,8 @@ function HomeShell() {
       className="command-center-shell"
       pageHeaderTitle="Command Center"
       pageHeaderShowDefaultButtons={false}
+      companyName="Company name (system/environment name)"
+      floatingNavActions={floatingNavActions}
     >
       <Card primary elevated className="command-center-home">
         <div className="card__body">
@@ -1352,105 +1574,126 @@ function HomeShell() {
             <TabStrip
               tabs={commandCenterTabs}
               onTabSelected={(id: string) => {
-                if (
-                  id === 'requisitions' ||
-                  id === 'purchase-orders' ||
-                  isPoDetailTabId(id) ||
-                  isPrDetailTabId(id)
-                ) {
+                if ((CC_MAIN_TAB_IDS as readonly string[]).includes(id)) {
                   setActiveTabId(id)
                 }
               }}
-              onCloseTab={closeClosableCommandCenterTab}
               overflowMode="none"
               className="tabstrip--command-center-tabs"
             />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              icon="arrow-path"
-              ariaLabel="Refresh"
-              onClick={() => {
-                setReqLifecycleBarIds([])
-                setPoLifecycleBarIds([])
-                setRefreshTick((t) => t + 1)
-              }}
-            />
+            <div className="command-center-toolbar-cluster" aria-label="Closing filters">
+              <Dropdown
+                id={`cc-closing-role-${roleDropdownId}`}
+                name="closingRole"
+                triggerClassName="btn btn--outline btn--md"
+                triggerIconSize="sm"
+                options={CLOSING_ROLE_OPTIONS}
+                value={roleFilter}
+                onChange={setRoleFilter}
+              />
+              <Dropdown
+                id={`cc-closing-user-${userDropdownId}`}
+                name="closingAssignees"
+                multiple
+                multipleCommitMode="apply-cancel"
+                panelSearchable
+                panelSearchPlaceholder="Search or add users"
+                onAddSearchResult={handleAddAssigneeFromSearch}
+                values={userFilters}
+                onValuesChange={setUserFilters}
+                allOptionValue={CLOSING_USER_FILTER_ALL}
+                clearAllUsersFallbackValue={CLOSING_CURRENT_USER_ID}
+                triggerClassName="btn btn--outline btn--md"
+                triggerIconSize="sm"
+                options={assigneeOptions}
+                placeholder="Users"
+                triggerFixedWidth="156px"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                icon="arrow-path"
+                ariaLabel="Refresh"
+                onClick={() => setRefreshTick((t) => t + 1)}
+              />
+            </div>
           </div>
 
-          {activeTabId === 'requisitions' && (
-            <LifecycleBarChart
-              key={refreshTick}
-              title="Requisition lifecycle"
-              bars={REQUISITION_CHART_BARS}
-              yAxisMax={120}
-              tableWrapperClassName="command-center-table-detail-anchor"
-              selectedBarIds={reqLifecycleBarIds}
-              onBarToggle={toggleReqLifecycleBar}
-            >
-              <>
-                <div className="command-center-table-detail-stack">
-                  <Table
-                    headerVariant="white"
-                    striped
-                    className="command-center-data-table"
-                    header={REQUISITION_TABLE_HEADER}
-                    body={
-                      <RequisitionTableBody
-                        rows={filteredRequisitionRows}
-                        selectedId={selectedRequisitionId}
-                        onSelectRow={setSelectedRequisitionId}
-                        lifecycleChartFilterStageIndices={reqLifecycleFilterStageIndices}
-                      />
-                    }
-                  />
+          {activeTabId === 'closing-manager' && (
+            <>
+              <section className="closing-manager-section" aria-labelledby="closing-metrics-heading">
+                <h2 id="closing-metrics-heading" className="closing-manager-section__title">
+                  Closing Metrics
+                </h2>
+                <div className="closing-metrics-row">
+                  <div className="closing-metric-card">
+                    <div className="closing-metric-card__label">Open Tasks</div>
+                    <div className="closing-metric-card__value">10</div>
+                  </div>
+                  <div className="closing-metric-card">
+                    <div className="closing-metric-card__label">Total Tasks</div>
+                    <div className="closing-metric-card__value">50</div>
+                  </div>
+                  <div className="closing-metric-card">
+                    <div className="closing-metric-card__label">Percent Closed</div>
+                    <div className="closing-metric-card__value">20%</div>
+                  </div>
                 </div>
-                {selectedRequisition != null && (
-                  <RequisitionSidePanel
-                    row={selectedRequisition}
-                    onClose={() => setSelectedRequisitionId(null)}
-                    onOpenRequisitionReportTab={openPrRequisitionDetailTab}
-                  />
-                )}
-              </>
-            </LifecycleBarChart>
-          )}
+              </section>
 
-          {activeTabId === 'purchase-orders' && (
-            <LifecycleBarChart
-              key={refreshTick}
-              title="PO lifecycle"
-              bars={PO_CHART_BARS}
-              yAxisMax={200}
-              selectedBarIds={poLifecycleBarIds}
-              onBarToggle={togglePoLifecycleBar}
-            >
-              <Table
-                headerVariant="white"
-                striped
-                className="command-center-data-table"
-                header={PO_TABLE_HEADER}
-                body={
-                  <PoPurchaseOrdersTableBody
-                    rows={filteredPoRows}
-                    onOpenOrder={openPoOrderDetailTab}
-                    lifecycleChartFilterStageIndices={poLifecycleFilterStageIndices}
-                  />
-                }
+              <LifecycleBarChart
+                key={refreshTick}
+                title="Closing Progress"
+                bars={CLOSING_PROGRESS_BARS}
+                yAxisMax={3}
+                className="closing-manager-progress-chart"
               />
-            </LifecycleBarChart>
+
+              <section className="closing-manager-section" aria-labelledby="closing-tasks-heading">
+                <h2 id="closing-tasks-heading" className="closing-manager-section__title">
+                  Closing Plan Tasks
+                </h2>
+                <Table
+                  variant="commandCenter"
+                  striped
+                  className="command-center-data-table closing-plan-tasks-table"
+                  sortColumns={closingPlanSortColumns}
+                  commandCenterToolbar={
+                    <div className="closing-plan-toolbar">
+                      <Button type="button" variant="outline" size="lg">
+                        Collapse All
+                      </Button>
+                      <Button type="button" variant="outline" size="lg">
+                        Expand All
+                      </Button>
+                    </div>
+                  }
+                  body={
+                    <ClosingPlanTasksTableBody
+                      userFilters={userFilters}
+                      assigneeOptions={assigneeOptions}
+                      showUserColumn={closingPlanShowUser}
+                    />
+                  }
+                />
+              </section>
+            </>
           )}
 
-          {isPrDetailTabId(activeTabId) && (
-            <div className="command-center-order-detail-wrap" key={activeTabId}>
-              <RequisitionDetailsTabView prId={prIdFromDetailTabId(activeTabId) ?? ''} />
+          {activeTabId === 'general-ledger' && (
+            <div className="command-center-tab-placeholder">
+              <p className="text-secondary">
+                General Ledger (placeholder). Use the Closing Manager tab for the closing dashboard.
+              </p>
             </div>
           )}
 
-          {isPoDetailTabId(activeTabId) && (
-            <div className="command-center-order-detail-wrap" key={activeTabId}>
-              <PoOrderDetailView poId={poIdFromDetailTabId(activeTabId) ?? 'PO-1039'} />
+          {activeTabId === 'financial-review' && (
+            <div className="command-center-tab-placeholder">
+              <p className="text-secondary">
+                Financial Review (placeholder). Use the Closing Manager tab for the closing dashboard.
+              </p>
             </div>
           )}
         </div>

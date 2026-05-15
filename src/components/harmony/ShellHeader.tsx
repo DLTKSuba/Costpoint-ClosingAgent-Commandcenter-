@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { Icon } from './Icon'
 import { Avatar } from './Avatar'
@@ -65,10 +66,10 @@ export function ShellHeader({
   return (
     <header className={clsx('header', className)}>
       <div className="header__brand">
-        <a href="/" className="header__brand-link">
+        <Link to="/" className="header__brand-link" title="Command Center home">
           <img src={logoSrc} alt="Logo" className="header__logo" />
           <span className="header__title">{productName}</span>
-        </a>
+        </Link>
       </div>
       <div className="header__actions">
         {showCompanyPicker && (

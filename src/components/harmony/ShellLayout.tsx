@@ -30,6 +30,8 @@ export interface ShellLayoutProps {
   floatingNavVariant?: 'full' | 'compact'
   showExecute?: boolean
   saveDisabled?: boolean
+  /** When set, replaces default FloatingNav buttons (Execute / Actions / Save). */
+  floatingNavActions?: ReactNode
   leftSidebarVariant?: LeftSidebarVariant
   // Standard props
   tabs?: ShellFooterTab[]
@@ -82,6 +84,7 @@ export function ShellLayout({
   floatingNavVariant,
   showExecute,
   saveDisabled,
+  floatingNavActions,
   leftSidebarVariant,
   tabs = DEFAULT_TABS,
   showMoreTabs = false,
@@ -156,6 +159,7 @@ export function ShellLayout({
               variant={floatingNavVariant ?? 'full'}
               showExecute={showExecute}
               saveDisabled={saveDisabled}
+              actions={floatingNavActions}
             />
           </div>
         )}

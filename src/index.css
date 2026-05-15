@@ -55,10 +55,11 @@
   border-left-color: transparent !important;
 }
 
-/* Command Center home card + body: white surface per design reference */
+/* Command Center home card: enforce Harmony outer radius + clip (children often square). */
 .command-center-home.card {
   background-color: #ffffff;
-  overflow: visible;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
 }
 
 .command-center-home .card__body {
@@ -68,7 +69,7 @@
 /* Tabs + toolbar actions (e.g. refresh) on one row; action right-aligned with tab strip. */
 .command-center-tab-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-3, 0.75rem);
   width: 100%;
@@ -88,14 +89,31 @@
  * can render a vertical edge at the clip boundary; command center has few tabs — use visible.
  * Also clear any right border on the tab chrome.
  */
-.command-center-tab-row .tabstrip--command-center-tabs .tabstrip__tabs {
-  overflow-x: visible;
-}
-
 .command-center-tab-row .tabstrip--command-center-tabs .tabstrip__container,
 .command-center-tab-row .tabstrip--command-center-tabs .tabstrip__nav {
   border-right: none;
   box-shadow: none;
+}
+
+/* Tab baseline: grey rule only spans tab labels (not full tabstrip flex width). */
+.command-center-tab-row .tabstrip--command-center-tabs .tabstrip__container {
+  border-bottom: none;
+  align-items: flex-end;
+}
+
+.command-center-tab-row .tabstrip--command-center-tabs .tabstrip__tabs {
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: visible;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Harmony Dropdown in toolbar: inline-block width (trigger is outline button). */
+.command-center-toolbar-cluster .dropdown {
+  width: auto;
+  max-width: 100%;
 }
 
 /* Command Center data tables: white header row + sort / filter chrome (reference UI). */
@@ -699,5 +717,102 @@ html.theme-cp:not(.dark) .command-center-requisition-late-items__vs-sub {
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   color: var(--text-secondary);
+}
+
+/* Closing Manager Command Center (reference UI) */
+.command-center-toolbar-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--space-2, 0.5rem);
+  flex-shrink: 0;
+}
+
+.closing-manager-section {
+  margin-bottom: var(--space-5, 1.25rem);
+}
+
+.closing-manager-section__title {
+  margin: 0 0 var(--space-3, 0.75rem);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.closing-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3, 0.75rem);
+}
+
+.closing-metric-card {
+  padding: var(--space-4, 1rem);
+  border-radius: var(--radius-lg, 8px);
+  border: 1px solid #3b82f6;
+  background: linear-gradient(180deg, #e8f4fc 0%, #dbeafe 100%);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.closing-metric-card__label {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2, 0.5rem);
+}
+
+.closing-metric-card__value {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.closing-manager-progress-chart {
+  margin-bottom: var(--space-5, 1.25rem);
+}
+
+.closing-plan-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 0.5rem);
+  align-items: center;
+}
+
+.closing-task-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  line-height: 1.4;
+}
+
+.closing-task-status--waiting {
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+}
+
+.closing-task-status--in-process {
+  color: #a16207;
+  background: #fef9c3;
+  border: 1px solid #fde047;
+}
+
+.closing-task-status--ready {
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+}
+
+.command-center-tab-placeholder {
+  padding: var(--space-6) var(--space-2);
+  max-width: 36rem;
 }
 

@@ -807,8 +807,22 @@ function TableDemo() {
 
   const filterBar = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-      <Dropdown options={periodOptions} value={period} placeholder="Period" onChange={(v) => setPeriod(v)} />
-      <Dropdown options={statusOptions} value={status} placeholder="Status" onChange={(v) => setStatus(v)} />
+      <Dropdown
+        options={periodOptions}
+        value={period}
+        placeholder="Period"
+        triggerClassName="btn btn--outline btn--md"
+        triggerIconSize="sm"
+        onChange={(v) => setPeriod(v)}
+      />
+      <Dropdown
+        options={statusOptions}
+        value={status}
+        placeholder="Status"
+        triggerClassName="btn btn--outline btn--md"
+        triggerIconSize="sm"
+        onChange={(v) => setStatus(v)}
+      />
       <Button buttonType="theme" variant="ghost" size="sm" onClick={() => { setPeriod('all'); setStatus('all') }}>Clear</Button>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
         {period !== 'all' && <Chip label={periodOptions.find((o) => o.value === period)?.label ?? period} removable onRemove={() => setPeriod('all')} />}
